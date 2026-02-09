@@ -14,7 +14,7 @@ DATA_DIR = "data/contracts"
 VECTOR_DIR = "vectorstores/contracts"
 
 st.set_page_config(
-    page_title="合同智能问答系统",
+    page_title="知识库测试Demo",
     layout="wide"
 )
 
@@ -59,7 +59,7 @@ def load_documents():
 def build_vectorstore():
     docs = load_documents()
     if not docs:
-        return False, "未找到合同文件"
+        return False, "未找到文件"
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=800,
@@ -73,7 +73,7 @@ def build_vectorstore():
     os.makedirs(os.path.dirname(VECTOR_DIR), exist_ok=True)
     vectorstore.save_local(VECTOR_DIR)
 
-    return True, f"向量库构建完成（{len(split_docs)} 个片段）"
+    return True, f"知识库构建完成（{len(split_docs)} 个片段）"
 
 
 def ask_llm(question: str):
@@ -102,20 +102,24 @@ def ask_llm(question: str):
     )
 
     prompt = ChatPromptTemplate.from_template(
-        """你是一名严谨的法律助理，请严格依据给定的合同内容回答问题。
-如果合同中没有明确说明，请回答“合同中未明确约定”。
+        """你是XX公司的企业知识库智能助理，
+    主要职责是基于公司内部资料，为客户和员工提供准确、专业的回答。
 
-【合同内容】
-{context}
+    请严格依据给定的公司资料内容进行回答。
+    如果资料中没有明确说明，请回答“资料中未明确说明”。
 
-【问题】
-{question}
+    【公司资料】
+    {context}
 
-【要求】
-- 只基于合同内容回答
-- 用清晰、条理化的中文
-- 不要编造合同中不存在的条款
-"""
+    【问题】
+    {question}
+
+    【回答要求】
+    - 只基于资料内容回答，不要推测或编造
+    - 使用专业、清晰、适合商务沟通的中文
+    - 条理清楚，可使用分点说明
+    - 不要出现“根据我的理解”“可能是”等不确定表述
+    """
     )
 
     chain = prompt | llm
@@ -129,13 +133,13 @@ def ask_llm(question: str):
 
 # ================= 页面 =================
 
-st.title("📄 合同智能问答系统")
+st.title("📄 企业知识库智能问答系统")
 
 with st.sidebar:
-    st.header("📂 合同管理")
+    st.header("📂 知识库管理")
 
-    if st.button("🔄 构建 / 更新向量库"):
-        with st.spinner("正在构建向量库..."):
+    if st.button("🔄 构建 / 更新知识库"):
+        with st.spinner("正在构建企业知识库..."):
             ok, msg = build_vectorstore()
         if ok:
             st.success(msg)
@@ -143,29 +147,31 @@ with st.sidebar:
             st.warning(msg)
 
     st.markdown("---")
-    st.markdown("**使用说明**")
     st.markdown(
         """
-        1. 将合同 PDF / TXT 放入 `data/contracts`
-        2. 点击「构建向量库」
-        3. 在右侧输入合同问题
+        **使用说明**
+        1. 将公司资料（产品说明 / 工程案例 / 合同条款等）放入 `data/contracts`
+        2. 点击「构建 / 更新知识库」
+        3. 在右侧输入问题进行查询
         """
     )
 
-# 主区域
-question = st.text_input("请输入合同问题：", placeholder="例如：合同的违约责任是什么？")
+question = st.text_input(
+    "请输入您想了解的问题：",
+    placeholder="例如：商场项目一般推荐使用哪些灯具？"
+)
 
-if st.button("🔍 查询") and question:
+if st.button("🔍 智能查询") and question:
     if not os.path.exists(VECTOR_DIR):
-        st.warning("请先构建向量库")
+        st.warning("请先构建企业知识库")
     else:
-        with st.spinner("正在分析合同内容..."):
+        with st.spinner("正在分析企业知识库内容..."):
             answer, docs = ask_llm(question)
 
-        st.subheader("✅ 综合答案")
+        st.subheader("✅ 智能解答")
         st.write(answer)
 
-        with st.expander("📄 查看引用的合同原文"):
+        with st.expander("📄 查看参考的公司资料原文"):
             for i, d in enumerate(docs, 1):
                 st.markdown(f"**段落 {i}｜来源：{d.metadata.get('source')}**")
                 st.write(d.page_content)
