@@ -185,26 +185,26 @@ def ask_llm(question: str):
 
 st.title("📄 企业知识库智能问答系统")
 
-# with st.sidebar:
-#     st.header("📂 知识库管理")
-#
-#     if st.button("🔄 构建 / 更新知识库"):
-#         with st.spinner("正在构建企业知识库..."):
-#             ok, msg = build_vectorstore()
-#         if ok:
-#             st.success(msg)
-#         else:
-#             st.warning(msg)
-#
-#     st.markdown("---")
-#     st.markdown(
-#         """
-#         **使用说明**
-#         1. 将公司资料（产品说明 / 工程案例 / 合同条款等）放入 `data/contracts`
-#         2. 点击「构建 / 更新知识库」
-#         3. 在右侧输入问题进行查询
-#         """
-#     )
+with st.sidebar:
+    st.header("📂 知识库管理")
+
+    if st.button("🔄 构建 / 更新知识库"):
+        with st.spinner("正在构建企业知识库..."):
+            ok, msg = build_vectorstore()
+        if ok:
+            st.success(msg)
+        else:
+            st.warning(msg)
+
+    st.markdown("---")
+    st.markdown(
+        """
+        **使用说明**
+        1. 将公司资料（产品说明 / 工程案例 / 合同条款等）放入 `data/contracts`
+        2. 点击「构建 / 更新知识库」
+        3. 在右侧输入问题进行查询
+        """
+    )
 
 question = st.text_input(
     "请输入您想了解的问题：",
