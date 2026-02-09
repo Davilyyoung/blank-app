@@ -28,6 +28,61 @@ def load_embeddings():
         encode_kwargs={"normalize_embeddings": True},
     )
 
+def get_doc_type(filename: str):
+    if "FAQ" in filename or "常见问题" in filename:
+        return "faq"
+    if "产品" in filename:
+        return "product"
+    if "方案" in filename or "案例" in filename:
+        return "solution"
+    if "合同" in filename:
+        return "contract"
+    return "normal"
+
+
+def split_by_type(docs):
+    result = []
+
+    faq_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=2000,
+        chunk_overlap=0,
+        separators=["\n\n"]
+    )
+
+    product_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=400,
+        chunk_overlap=50,
+        separators=["\n\n", "\n", "：", "，"]
+    )
+
+    solution_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=800,
+        chunk_overlap=150,
+        separators=["\n\n", "\n", "。", "，"]
+    )
+
+    contract_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200,
+        separators=["\n\n", "\n", "条", "。"]
+    )
+
+    for d in docs:
+        doc_type = get_doc_type(d.metadata.get("source", ""))
+
+        if doc_type == "faq":
+            result += faq_splitter.split_documents([d])
+        elif doc_type == "product":
+            result += product_splitter.split_documents([d])
+        elif doc_type == "solution":
+            result += solution_splitter.split_documents([d])
+        elif doc_type == "contract":
+            result += contract_splitter.split_documents([d])
+        else:
+            result += solution_splitter.split_documents([d])
+
+    return result
+
 
 def load_documents():
     documents = []
@@ -61,18 +116,7 @@ def build_vectorstore():
     if not docs:
         return False, "未找到文件"
 
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=600,
-        chunk_overlap=80,
-        separators=[
-            "\n\n\n",
-            "\n\n",
-            "\n",
-            "。"
-        ]
-    )
-
-    split_docs = splitter.split_documents(docs)
+    split_docs = split_by_type(docs)
 
     embeddings = load_embeddings()
     vectorstore = FAISS.from_documents(split_docs, embeddings)
@@ -143,7 +187,7 @@ st.title("📄 企业知识库智能问答系统")
 
 # with st.sidebar:
 #     st.header("📂 知识库管理")
-
+#
 #     if st.button("🔄 构建 / 更新知识库"):
 #         with st.spinner("正在构建企业知识库..."):
 #             ok, msg = build_vectorstore()
@@ -151,7 +195,7 @@ st.title("📄 企业知识库智能问答系统")
 #             st.success(msg)
 #         else:
 #             st.warning(msg)
-
+#
 #     st.markdown("---")
 #     st.markdown(
 #         """
